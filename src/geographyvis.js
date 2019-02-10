@@ -12,7 +12,9 @@ var outerWidth  = 500;
 
       var svg = d3.select("body").append("svg")
         .attr("width",  outerWidth)
-        .attr("height", outerHeight);
+          .attr("height", outerHeight)
+          .style("display","block")
+          .style("margin","auto");
 
       var g = svg.append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -49,4 +51,4 @@ var outerWidth  = 500;
         return d;
       }
 
-      d3.csv("data.csv", type, render);
+      d3.csv("../geonames_cities100000.csv", type, render);

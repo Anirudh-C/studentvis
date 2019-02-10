@@ -1,66 +1,51 @@
-var data = [
-    {program: "iMTech", count: 300},
-    {program: "MTech", count: 500},
-    {program: "MSc DigiSoc", count: 200}
-];
+var data = [{"program":"iMTech","count": 250},{"program":"MTech","count": 500},{"program":"MSc","count":60}];
 
 // Configuration Variables
-var width = 540;
-var height = 300;
-var padding = {
-    left : 50,
-    right : 50,
-    top : 30,
-    bottom : 50
-};
-
-var barWidth = 20;
-var barSeparation = 30;
-
-// Objects related to visualisation
-// DOM Selector
-var svg = d3.select(".graph").append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .style("display", "block")
-    .style("margin", "auto");
+var margin = {top: 20, right: 20, bottom: 30, left: 40},
+    width = 540 - margin.left - margin.right,
+    height = 200 - margin.top - margin.bottom;
 
 // Scales
-var colorScale = d3.scaleOrdinal(d3.schemeCategory10)
-    .domain(data.map(x => x.program));
-var heightScale = d3.scaleOrdinal()
-    .domain(data.map(x => x.program))
-    .range(d3.range(height - barWidth - padding.bottom ,padding.top,-barSeparation));
-var countScale = d3.scaleLinear()
-    .domain(d3.extent(data, function (d) { return d.count; }))
-    .rangeRound([0,width - padding.right]);
+var y = d3.scaleBand()
+          .range([height, 0])
+          .padding(0.4);
+var x = d3.scaleLinear()
+    .range([0, width]);
+var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+// DOM Selector
+var svg = d3.select(".graph").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .style("display","block")
+    .style("margin","auto")
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// Format the data
+data.forEach(function(d) {
+    d.count = +d.count;
+});
+
+// Scale the range of the data in the domains
+x.domain([0, d3.max(data, function(d){ return d.count; })])
+y.domain(data.map(function(d) { return d.program; }));
+color.domain(data.map(function(d) { return d.program; }));
+
+// Append the bars
+svg.selectAll(".bar")
+    .data(data)
+    .enter().append("rect")
+    .attr("class", "bar")
+    .attr("width", function(d) {return x(d.count); } )
+    .attr("y", function(d) { return y(d.program); })
+    .attr("height", y.bandwidth())
+    .style("fill", function(d) { return color(d.program); });
 
 // Axes
-var xAxis = d3.axisBottom(countScale)
-    .tickFormat(function(d) { return d.count; });
-var yAxis = d3.axisLeft(heightScale)
-    .tickFormat(function(d) { return d.program; });
-
-function render(data) {
-    var rects = svg.selectAll("rect").data(data);
-
-    // Render Data
-    rects.enter().append("rect")
-        .attr("x", padding.left)
-        .attr("y", function (d) { return heightScale(d.program); })
-        .attr("fill", function (d) { return colorScale(d.program); })
-        .attr("width", function (d) { return countScale(d.count) + padding.left; })
-        .attr("height", 20);
-
-    // Render Axes
-    svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(" + padding.left + "," + (height - padding.bottom + barWidth/2) + ")")
-        .call(d3.axisBottom(countScale));
-    svg.append("g")
-        .attr("class", "y axis")
-        .attr("transform", "translate(" + padding.left + "," + padding.top + ")")
-        .call(d3.axisLeft(heightScale));
-}
-
-render(data);
+svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x));
+svg.append("g")
+    .call(d3.axisLeft(y));
