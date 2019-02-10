@@ -51,4 +51,4 @@ function type(d){
     return d;
 }
 
-d3.csv("../geonames_cities100000.csv", type, render);
+d3.csv("geonames_cities100000.csv", type, render);
