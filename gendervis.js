@@ -1,78 +1,100 @@
 var data = [
-    {name: 'boys', count: 56},
-    {name: 'girls', count: 43}
+    {"program":"iMTech", "male": 78, "female": 22},
+    {"program":"MTech", "male": 82, "female": 18},
+    {"program":"MSc", "male": 56, "female": 44},
+    {"program":"PhD", "male": 43, "female": 57}
 ];
 
 // Configuration Variables
-var boyColour = "#00abff";
-var girlColour = "#f665e2";
+var margin = {top: 20, right: 20, bottom: 30, left: 40},
+    width = 540 - margin.left - margin.right,
+    height = 200 - margin.top - margin.bottom;
 
-var width = 540,
-    height = 540,
-    radius = 200;
-
-// Objects related to visualisation
 var totalCount = data[0].count + data[1].count;
-
-// Circular objects in D3
-var arc = d3.arc()
-    .outerRadius(radius - 10)
-    .innerRadius(100);
-
-var pie = d3.pie()
-    .sort(null)
-    .value(function(d) {
-	return d.count;
-    });
 
 // DOM Selector
 var svg = d3.select('.graph').append("svg")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
     .style("display", "block")
     .style("margin", "auto")
     .append("g")
-    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-function render(data) {
-    var g = svg.selectAll(".arc")
-        .data(pie(data))
-        .enter().append("g");
+// Define the div for the tooltip
+var div = d3.select(".graph").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
 
-    g.append("path")
-        .attr("d", arc)
-    .style("stroke","#282a36")
-        .style("stroke-dasharray", "2,2")
-        .style("fill", function(d,i) {
-      	    if(d.data.name === "boys")
-                return boyColour;
-            return girlColour;
-        });
+// Scales
+var y = d3.scaleBand()
+    .range([height,0])
+    .padding(0.4);
+var xmale = d3.scaleLinear()
+    .range([0, width/2]);
+var xfemale = d3.scaleLinear()
+    .range([width/2, 0]);
 
-    g.append("text")
-        .attr("transform", function(d) {
-            var _d = arc.centroid(d);
-            _d[0] *= 1.5;
-            _d[1] *= 1.5;
-            return "translate(" + _d + ")";
-        })
-        .attr("dy", ".75em")
-        .style("text-anchor", "middle")
-        .style("fill", "#6272a4")
-        .text(function(d) {
-            var percentage = (d.data.count/totalCount)*100;
-            percentage *= 10;
-            percentage = Math.round(percentage);
-            percentage /= 10;
-            return percentage+'%';
-        });
+// Scale the range of the datat in the domains
+xmale.domain([0, d3.max(data, function(d){ return d.male; })]);
+xfemale.domain([0, d3.max(data, function(d){ return d.female; })]);
+y.domain(data.map(function(d) { return d.program; }));
 
-    g.append("text")
-        .attr("text-anchor", "middle")
-        .attr('font-size', '4em')
-        .style("fill","#6272a4")
-        .attr('y', 20)
-        .text(totalCount);
-}
+// Append the male bars
+svg.selectAll(".mbar")
+    .data(data)
+    .enter().append("rect")
+    .attr("class", "mbar")
+    .attr("width", function(d) { return xmale(d.male); })
+    .attr("x", width/2)
+    .attr("y", function(d) { return y(d.program); })
+    .attr("height", y.bandwidth())
+    .style("fill", "#1f77b4")
+    .on("mouseover", function(d) {
+        div.transition()
+            .duration(200)
+            .style("opacity", 0.9);
+        div.html(d.program + "<br/>" + "Male " + d.male + "%")
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mouseout", function(d) {
+        div.transition()
+            .duration(500)
+            .style("opacity", 0);
+    });
 
-render(data);
+// Append the female bars
+svg.selectAll(".fbar")
+    .data(data)
+    .enter().append("rect")
+    .attr("class", "fbar")
+    .attr("width", function(d) { return xfemale(0) - xfemale(d.female); })
+    .attr("x", function(d) { return xfemale(d.female); })
+    .attr("y", function(d) { return y(d.program); })
+    .attr("height", y.bandwidth())
+    .style("fill", "#d62728")
+    .on("mouseover", function(d) {
+        div.transition()
+            .duration(200)
+            .style("opacity", 0.9);
+        div.html(d.program + "<br/>" + "Female " + d.female + "%")
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 36) + "px");
+    })
+    .on("mouseout", function(d) {
+        div.transition()
+            .duration(500)
+            .style("opacity", 0);
+    });
+
+// Axes
+var maleAxis = svg.append("g")
+    .attr("transform", "translate(" + width/2 + "," + height + ")")
+    .call(d3.axisBottom(xmale));
+var femaleAxis = svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(xfemale));
+
+maleAxis.selectAll("line").remove();
+femaleAxis.selectAll("line").remove();

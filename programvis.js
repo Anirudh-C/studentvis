@@ -29,7 +29,7 @@ data.forEach(function(d) {
 });
 
 // Scale the range of the data in the domains
-x.domain([0, d3.max(data, function(d){ return d.count; })])
+x.domain([0, d3.max(data, function(d){ return d.count; })]);
 y.domain(data.map(function(d) { return d.program; }));
 color.domain(data.map(function(d) { return d.program; }));
 
